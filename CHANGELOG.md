@@ -2,6 +2,19 @@
 
 Todas as versões publicadas do nfseai. O formato segue o [versionamento semântico](https://semver.org/lang/pt-BR/).
 
+## Não publicado
+
+- **Caminho A: API oficial da Sefin Nacional com certificado digital A1** ([#2](https://github.com/pycodebr/nfseai/issues/2)).
+  Validado na produção restrita (emissão, consulta, XML, consulta pela DPS e cancelamento); ainda sem nota emitida
+  na produção (`docs/caminho-a.md`). Atende emitentes fora do Simples Nacional,
+  com ou sem ISSQN retido pelo tomador. `nfseai conectar --certificado` grava o certificado da empresa (a senha é
+  digitada no terminal do usuário). O ensaio monta, valida no XSD oficial 1.01 e assina a DPS sem enviar nada; a
+  emissão reserva o número da DPS no registro local e, se a conexão cair, consulta a DPS na Sefin antes de
+  qualquer outra ação. Comandos novos: `xml` (XML oficial da nota) e `dps`. O suporte a certificado é um extra
+  opcional (`nfseai[certificado]`); quem usa só o portal não instala nada novo. IRRF retido pelo tomador
+  (`--aliquota-irrf`); o NBS é opcional nesse caminho.
+- O caminho B (portal) não mudou. `status` e `empresas` passam a informar o `caminho` de cada empresa.
+
 ## 0.1.1 (2026-11-10)
 
 - `setup.sh` tenta a instalação dos pacotes uma segunda vez, sem cache, quando o download falha (um download
