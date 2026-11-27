@@ -150,8 +150,9 @@ retentions are not supported yet. Say so plainly instead of trying variations
 Companies outside Simples Nacional, or with ISSQN withheld by the customer, can use **path A**: the official
 Sefin Nacional API with the company's A1 digital certificate (`nfseai conectar --certificado`). The certificate
 password follows the same rule as the portal password: the user types it in their terminal, never in chat.
-Path A is validated on `producao-restrita` (invoices without fiscal value) but has no invoice issued in production
-yet; start there and move a company to production only when the user decides. `nfseai status` shows the path in `caminho`. Read
+Path A is validated on `producao-restrita` (invoices without fiscal value) and has issued invoices in production;
+start there and move a company to production only when the user decides, after the checklist in
+`references/certificado.md`. `nfseai status` shows the path in `caminho`. Read
 `references/certificado.md` before using it.
 
 ## 6. When something fails

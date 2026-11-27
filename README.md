@@ -279,7 +279,7 @@ Quando a nota ou a empresa está fora do cenário, o comando recusa com `Unsuppo
 
 ### Empresas com certificado digital: API oficial
 
-Empresas fora do Simples Nacional, ou com ISSQN retido pelo tomador, podem emitir pela API oficial da Sefin Nacional com o certificado digital A1 da empresa (o caminho A de [`docs/caminhos.md`](docs/caminhos.md)). Esse caminho foi validado no ambiente `producao-restrita`, em que as notas não têm valor fiscal (emissão, consulta, XML oficial e cancelamento); ainda não há nota emitida na produção por ele. Comece pela produção restrita.
+Empresas fora do Simples Nacional, ou com ISSQN retido pelo tomador, podem emitir pela API oficial da Sefin Nacional com o certificado digital A1 da empresa (o caminho A de [`docs/caminhos.md`](docs/caminhos.md)). Esse caminho foi validado no ambiente `producao-restrita`, em que as notas não têm valor fiscal (emissão, consulta, XML oficial e cancelamento), e já emitiu notas na produção com o certificado de uma empresa fora do Simples Nacional. Comece pela produção restrita e, antes de passar a empresa para a produção, siga o roteiro de [`certificado.md`](skills/nfseai/references/certificado.md) (série da DPS, padrões fiscais e leiaute).
 
 ```bash
 pip install "nfseai[certificado] @ git+https://github.com/pycodebr/nfseai"   # suporte a certificado (opcional)

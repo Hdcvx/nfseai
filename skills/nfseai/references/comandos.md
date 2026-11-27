@@ -26,6 +26,7 @@ command name.
 | `nfseai configurar --codigo-servico C --nbs N --descricao "..." (--aliquota-sn P \| --sem-valor-tributos) [--info-complementar T] [--municipio-prestacao IBGE --nome-municipio-prestacao "Nome/UF"]` | Saves fiscal defaults without questions; only the options passed change. Exit 4 while something is still missing |
 | `nfseai conectar --certificado F.pfx [--empresa X] [--municipio IBGE] [--inscricao-municipal IM] [--serie N] [--ambiente producao-restrita\|producao]` | **User only, in a terminal.** Path A: opens the A1 certificate, shows holder and CNPJ, saves after confirmation. See `certificado.md` |
 | `nfseai configurar ... --tributos-federais P --tributos-estaduais P --tributos-municipais P [--aliquota-iss P] [--aliquota-irrf P]` | Path A fiscal defaults (approximate tax percentages; ISSQN rate only when the municipality requires it; IRRF withheld by the customer) |
+| `nfseai configurar [--serie N] [--leiaute 1.01-nt009\|1.01\|padrao]` | Path A only: changes the DPS series (numbering of the new series starts in the local ledger) or forces the DPS layout for the NT 009 switch. Output: `caminho_a` with `serie` and `leiaute` |
 | `nfseai desconectar --confirm` | Deletes the saved password and session of the company (and the certificate copy, on path A). Alias: `disconnect` |
 | `nfseai doctor` | Checks Python, dependencies, permissions of `~/.nfseai`, portal reachability, PDF support |
 | `nfseai instalar-certificado` | Installs certificate support for path A (`cryptography`) into nfseai's environment |

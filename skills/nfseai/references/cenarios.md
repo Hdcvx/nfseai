@@ -62,6 +62,6 @@ in the repository; the procedure is in `docs/remapeamento.md` there.
 - **Official API (Sefin Nacional / ADN)** with an ICP-Brasil digital certificate (mTLS, signed XML). It
   returns the fiscal XML, has a test environment and native idempotency. It needs an e-CNPJ A1. nfseai
   implements it as path A, for issuers outside Simples Nacional, with or without ISSQN withheld by the
-  customer; validated on `producao-restrita`, not yet in production (`references/certificado.md`).
+  customer; validated on `producao-restrita` and with invoices issued in production (`references/certificado.md`).
 - **Municipal systems.** Municipalities that have not joined the national issuer keep their own portals.
   nfseai does not talk to them.

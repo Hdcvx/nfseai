@@ -21,8 +21,8 @@ Documentação técnica oficial, publicada em `gov.br/nfse` (Documentação Atua
 | Manual dos Contribuintes, APIs do Emissor Público Nacional | 1.0 (17/03/2025) | rotas da Sefin Nacional |
 
 O Swagger da Sefin Nacional (`sefin.nfse.gov.br/SefinNacional/docs/index`) só abre com certificado na conexão. O
-formato JSON das mensagens (nomes dos campos do envio e do retorno) ainda não foi conferido nele e fica marcado
-como **a confirmar** até a primeira chamada em produção restrita.
+formato JSON das mensagens (nomes dos campos do envio e do retorno) foi conferido nele na primeira chamada à
+produção restrita (item 1 de "Pontos a confirmar").
 
 ## Rotas da Sefin Nacional
 
@@ -32,12 +32,12 @@ Toda chamada usa TLS mútuo com o certificado A1 do emitente.
 
 | Método | Rota | O que faz | Situação |
 |---|---|---|---|
-| POST | `/nfse` | recebe a DPS assinada e devolve a NFS-e gerada ou os motivos da rejeição, de forma síncrona | mapeado |
-| GET | `/nfse/{chaveAcesso}` | XML da NFS-e | mapeado |
-| GET | `/dps/{id}` | chave de acesso da NFS-e gerada a partir de uma DPS, para quem consta na nota | mapeado |
-| HEAD | `/dps/{id}` | informa se a DPS já gerou NFS-e, sem devolver a chave | mapeado |
-| POST | `/nfse/{chaveAcesso}/eventos` | pedido de registro de evento assinado (cancelamento) | mapeado |
-| GET | `/nfse/{chaveAcesso}/eventos` | eventos vinculados à nota | mapeado |
+| POST | `/nfse` | recebe a DPS assinada e devolve a NFS-e gerada ou os motivos da rejeição, de forma síncrona | validado (produção restrita e produção) |
+| GET | `/nfse/{chaveAcesso}` | XML da NFS-e | validado |
+| GET | `/dps/{id}` | chave de acesso da NFS-e gerada a partir de uma DPS, para quem consta na nota | validado (item 8) |
+| HEAD | `/dps/{id}` | informa se a DPS já gerou NFS-e, sem devolver a chave | mapeado (o cliente usa o `GET`) |
+| POST | `/nfse/{chaveAcesso}/eventos` | pedido de registro de evento assinado (cancelamento) | validado |
+| GET | `/nfse/{chaveAcesso}/eventos/{tipoEvento}/{numSeqEvento}` | evento vinculado à nota | validado (item 7) |
 | GET | `/parametros_municipais/{codigoMunicipio}/convenio` | convênio do município | mapeado |
 | GET | `/parametros_municipais/{codigoMunicipio}/{codigoServico}` | alíquota, regimes especiais e deduções do serviço | mapeado |
 
@@ -92,7 +92,11 @@ src/nfseai/
   (`pip install 'nfseai[certificado]'`), no mesmo modelo do suporte a PDF. Quem usa só o caminho B não instala
   nada novo.
 - **Numeração da DPS.** Uma tabela nova no `ledger.sqlite3` guarda o último número por empresa e série. A série
-  padrão é `00001`, dentro da faixa oficial de aplicativo próprio (00001 a 49999).
+  padrão é `00001`, dentro da faixa oficial de aplicativo próprio (00001 a 49999). Na produção, a empresa pode
+  já ter usado essa série em outro sistema (ERP, emissor anterior), e a Sefin recusaria os números repetidos com
+  `E0014`. Por isso a documentação pede uma série exclusiva do nfseai antes da produção, e
+  `nfseai configurar --serie N` troca a série sem reconectar o certificado. Pelo mesmo motivo, o `ledger.sqlite3`
+  precisa ficar em armazenamento persistente quando o nfseai roda em servidor ou contêiner.
 
 ## Cenário inicial do caminho A
 
@@ -132,6 +136,9 @@ real, fora do Simples Nacional:
    cancelamento é consultado em `/eventos/101101/1`. Nota sem cancelamento: "gerada"; depois do evento:
    "cancelada".
 8. **Validado.** `GET /dps/{id}` recebe os 42 números do identificador, sem o prefixo `DPS` (com ele: E2400).
+9. **Validado na produção.** Em novembro de 2026, notas emitidas na produção (`sefin.nfse.gov.br`) com o certificado de
+   uma empresa fora do Simples Nacional, no leiaute publicado em fevereiro (o padrão do ambiente), com a série
+   escolhida para o nfseai.
 
 Ciclo validado na produção restrita: ensaio, emissão (com IRRF retido e com ISSQN retido pelo tomador),
 consulta pela chave, XML oficial, consulta pela DPS, prévia e cancelamento.
@@ -155,9 +162,9 @@ sem retenção na produção. Para testar, informe a retenção que o ambiente e
 - **Dois leiautes da versão 1.01.** Desde 20/10/2026 a produção restrita aplica o leiaute da Nota Técnica 009
   (reforma tributária; pacote de esquemas de 24/11/2026, em `schemas/1.01-nt009/`) e recusa a DPS do pacote
   publicado em 09/02/2026 com E1235. A produção segue no pacote de fevereiro até a virada anunciada pelo
-  CGNFS-e. O leiaute é escolhido pelo ambiente; `Store.save_sefin_options(empresa, leiaute=...)` força um deles
-  para a virada. Na DPS da NT 009 entram `finNFSe` = 0 (nota regular) depois de `tpEmit` e `indDest` = 0 (o
-  destinatário é o tomador) depois de `toma`, e o `cNBS` passa para antes da descrição. O grupo IBS/CBS continua
+  CGNFS-e. O leiaute é escolhido pelo ambiente; `nfseai configurar --leiaute 1.01-nt009` (ou
+  `Store.save_sefin_options(empresa, leiaute=...)`) força um deles para a virada. Na DPS da NT 009 entram `finNFSe` = 0 (nota regular) depois de `tpEmit`
+  e `indDest` = 0 (o destinatário é o tomador) depois de `toma`, e o `cNBS` passa para antes da descrição. O grupo IBS/CBS continua
   opcional e não é informado. Os eventos (cancelamento) não mudaram entre os pacotes.
 - **Declaração UTF-8.** A Sefin recusa o XML sem `<?xml version="1.0" encoding="UTF-8"?>` (E1229).
 - **IRRF retido pelo tomador.** `configurar --aliquota-irrf 1,5` grava a alíquota; a emissão calcula o valor
@@ -184,3 +191,6 @@ sem retenção na produção. Para testar, informe a retenção que o ambiente e
 4. **Feita.** Validação em produção restrita com o certificado de uma empresa real; este documento passa a separar o que foi
    validado.
 5. Pull request.
+6. **Feita.** Notas emitidas na produção (item 9 de "Pontos a confirmar").
+7. Ajustes depois da produção: troca de série e de leiaute pela linha de comando, orientação nas recusas E0014
+   e E1235 e roteiro de ida para a produção em `skills/nfseai/references/certificado.md`.

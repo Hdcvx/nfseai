@@ -461,15 +461,20 @@ class Store:
             raise ProfileError(f'a empresa "{name}" não está conectada pelo caminho A (certificado)')
         return dict(config)
 
-    def save_sefin_options(self, name, *, leiaute=None):
+    def save_sefin_options(self, name, *, leiaute=None, serie=None):
         """Opções do caminho A. ``leiaute`` força o pacote de esquemas (para a virada da produção para a NT 009);
-        ``''`` volta ao padrão do ambiente."""
+        ``''`` volta ao padrão do ambiente. ``serie`` troca a série da DPS: a numeração da série nova começa no
+        registro local e a da série anterior fica guardada."""
         from .dps import LEIAUTES
 
         config = self.load_config()
         entry = (config['empresas'].get(name) or {}).get('sefin')
         if not entry:
             raise ProfileError(f'a empresa "{name}" não está conectada pelo caminho A (certificado)')
+        if serie is not None:
+            if not 1 <= int(serie) <= 49999:
+                raise ProfileError('a série da DPS de aplicativo próprio vai de 1 a 49999')
+            entry['serie'] = int(serie)
         if leiaute is not None:
             if leiaute and leiaute not in LEIAUTES:
                 raise ProfileError(f'leiaute desconhecido: {leiaute!r} (use {", ".join(LEIAUTES)})')

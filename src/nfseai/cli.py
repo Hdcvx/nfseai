@@ -215,6 +215,10 @@ def build_parser():
     config.add_argument('--municipio-prestacao', dest='municipio_prestacao', help='código IBGE; "" volta ao padrão')
     config.add_argument('--nome-municipio-prestacao', dest='nome_municipio_prestacao')
     _add_sefin_fiscal_args(config)
+    config.add_argument('--serie', type=int,
+                        help='caminho A: série da DPS (1 a 49999), uma que nenhum outro sistema da empresa use')
+    config.add_argument('--leiaute', choices=['1.01', '1.01-nt009', 'padrao'],
+                        help='caminho A: força o leiaute da DPS (virada da NT 009); "padrao" volta ao do ambiente')
 
     add('doctor', 'confere a instalação, as permissões e o acesso ao portal')
     add('instalar-pdf', 'instala o suporte a PDF (Playwright + Chromium)')
@@ -682,12 +686,24 @@ def run(args):
         return {'empresa': empresa, 'removida': store.remove_credentials(empresa)}, EXIT_OK
 
     if command == 'configurar':
+        caminho_a = None
+        if args.serie is not None or args.leiaute is not None:
+            if transporte != TRANSPORTE_SEFIN:
+                raise UsageError('--serie e --leiaute existem só no caminho A (empresa conectada por certificado).')
+            leiaute = None if args.leiaute is None else ('' if args.leiaute == 'padrao' else args.leiaute)
+            gravado = store.save_sefin_options(empresa, leiaute=leiaute, serie=args.serie)
+            caminho_a = {
+                'serie': gravado.get('serie'),
+                'leiaute': gravado.get('leiaute') or _leiaute_do_ambiente(gravado['ambiente']),
+            }
         flags = (
             args.codigo_servico, args.nbs, args.descricao, args.aliquota_sn, args.info_complementar,
             args.municipio_prestacao, args.nome_municipio_prestacao, args.aliquota_iss, args.aliquota_irrf,
             args.tributos_federais,
             args.tributos_estaduais, args.tributos_municipais,
         )
+        if caminho_a is not None and all(flag is None for flag in flags) and not args.sem_valor_tributos:
+            return {'empresa': empresa, 'caminho_a': caminho_a}, EXIT_OK
         if all(flag is None for flag in flags) and not args.sem_valor_tributos:
             if transporte == TRANSPORTE_SEFIN:
                 raise UsageError(
@@ -706,10 +722,13 @@ def run(args):
         fiscal = _fiscal_from_args(store, empresa, args)
         saved = store.save_fiscal(empresa, **fiscal.as_dict(raw=True))
         faltando = saved.missing(transporte)
-        return {
+        data = {
             'empresa': empresa,
             'perfil_fiscal': {'completo': not faltando, 'faltando': faltando, **saved.as_dict()},
-        }, EXIT_OK if not faltando else EXIT_FISCAL_INCOMPLETE
+        }
+        if caminho_a is not None:
+            data['caminho_a'] = caminho_a
+        return data, EXIT_OK if not faltando else EXIT_FISCAL_INCOMPLETE
 
     if command == 'registro':
         ledger = _ledger(store)

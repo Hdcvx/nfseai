@@ -92,6 +92,32 @@ def _erros(data):
     return erros
 
 
+# Recusas com causa conhecida e solução que não depende do contador. A lista `errors` da exceção continua com o
+# texto da Sefin; a dica vai na mensagem e em `exc.dicas`.
+DICAS_REJEICAO = {
+    'E0014': (
+        'E0014: já existe DPS com esta série e este número. Em geral, outro sistema da empresa (ERP, emissor '
+        'anterior) usa a mesma série, ou o registro local (ledger.sqlite3) foi recriado e a numeração recomeçou. '
+        'Escolha uma série que só o nfseai use: `nfseai configurar --serie N`. Não reenvie a mesma nota.'
+    ),
+    'E1235': (
+        'E1235: a DPS não segue o leiaute que o ambiente aplica (virada da NT 009). Veja o leiaute em '
+        '`nfseai status` e troque com `nfseai configurar --leiaute 1.01-nt009` (ou `--leiaute 1.01`).'
+    ),
+}
+
+
+def dicas_rejeicao(erros):
+    """Orientações para os códigos de recusa conhecidos, na ordem em que aparecem."""
+    dicas = []
+    for erro in erros:
+        codigo = str(erro).split(':', 1)[0].strip()
+        dica = DICAS_REJEICAO.get(codigo)
+        if dica and dica not in dicas:
+            dicas.append(dica)
+    return dicas
+
+
 # --------------------------------------------------------------------------- sessão
 class SefinSession:
     """HTTPS com TLS mútuo (certificado A1 do emitente) e HTTP/1.1, com ritmo mínimo entre chamadas.
@@ -372,7 +398,13 @@ class EmissaoSefin:
             return self._resultado(ler_nfse(ungzip_b64(response.data[CAMPOS['nfse']])), id_dps, request)
         erros = _erros(response.data)
         if erros and 400 <= response.status_code < 500:
-            raise EmissionRejectedError(f'a Sefin recusou a DPS {id_dps}: {"; ".join(erros)}', erros)
+            dicas = dicas_rejeicao(erros)
+            mensagem = f'a Sefin recusou a DPS {id_dps}: {"; ".join(erros)}'
+            if dicas:
+                mensagem += ' | o que fazer: ' + ' '.join(dicas)
+            exc = EmissionRejectedError(mensagem, erros)
+            exc.dicas = dicas
+            raise exc
         return self._recuperar(id_dps, request, f'HTTP {response.status_code}')
 
 
@@ -516,6 +548,6 @@ class SefinClient:
 
 
 __all__ = [
-    'AMBIENTES', 'CAMPOS', 'NotaSefin', 'SefinClient', 'SefinResponse', 'SefinSession', 'gzip_b64', 'ler_nfse',
-    'ungzip_b64', 'validar_pedido_evento',
+    'AMBIENTES', 'CAMPOS', 'DICAS_REJEICAO', 'NotaSefin', 'SefinClient', 'SefinResponse', 'SefinSession',
+    'dicas_rejeicao', 'gzip_b64', 'ler_nfse', 'ungzip_b64', 'validar_pedido_evento',
 ]

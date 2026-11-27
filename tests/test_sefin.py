@@ -162,6 +162,17 @@ def test_rejeicao_da_sefin_vira_emission_rejected_com_os_codigos(client, sefin):
     with pytest.raises(EmissionRejectedError, match='E0160') as exc:
         client.emissao.emit(client.emissao.prepare(pedido()), confirm=True)
     assert exc.value.errors == ['E0160: Opção do Simples Nacional não confere.']
+    assert exc.value.dicas == []
+
+
+@pytest.mark.parametrize('codigo, comando', [('E0014', '--serie'), ('E1235', '--leiaute')])
+def test_recusa_conhecida_traz_o_que_fazer_sem_mudar_os_erros(client, sefin, codigo, comando):
+    sefin.on('POST', '/nfse', SefinResponse(400, {'erros': [{'Codigo': codigo, 'Descricao': 'descrição oficial'}]}))
+    with pytest.raises(EmissionRejectedError) as exc:
+        client.emissao.emit(client.emissao.prepare(pedido()), confirm=True)
+    assert exc.value.errors == [f'{codigo}: descrição oficial']
+    assert len(exc.value.dicas) == 1 and comando in exc.value.dicas[0]
+    assert comando in str(exc.value)
 
 
 def test_falha_de_rede_consulta_a_dps_e_recupera_a_nota_sem_reenviar(client, sefin):

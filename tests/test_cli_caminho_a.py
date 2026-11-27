@@ -139,6 +139,42 @@ def test_configurar_grava_os_tributos_aproximados(conectada, capsys):
     assert code == 0
 
 
+def test_configurar_troca_a_serie_e_o_leiaute(conectada, capsys):
+    code, data, _ = run(capsys, 'configurar', '--empresa', 'empresa-a', '--serie', '100', '--leiaute', '1.01')
+    assert code == 0
+    assert data['caminho_a'] == {'serie': 100, 'leiaute': '1.01'}
+    _, data, _ = run(capsys, 'status', '--empresa', 'empresa-a')
+    assert data['emitente']['serie'] == 100 and data['leiaute'] == '1.01'
+
+    code, data, _ = run(capsys, 'configurar', '--empresa', 'empresa-a', '--leiaute', 'padrao', *FISCAL)
+    assert code == 0
+    assert data['caminho_a'] == {'serie': 100, 'leiaute': '1.01-nt009'}
+    assert data['perfil_fiscal']['completo'] is True
+
+
+def test_configurar_recusa_serie_fora_da_faixa(conectada, capsys):
+    code, _, err = run(capsys, 'configurar', '--empresa', 'empresa-a', '--serie', '50000')
+    assert code != 0 and '49999' in err
+    _, data, _ = run(capsys, 'status', '--empresa', 'empresa-a')
+    assert data['emitente']['serie'] == 1
+
+
+def test_serie_e_leiaute_nao_existem_no_portal(conectada, capsys):
+    conectada.save_credentials('empresa-b', '11444777000161', 'senha-portal')
+    code, _, err = run(capsys, 'configurar', '--empresa', 'empresa-b', '--serie', '2')
+    assert code != 0 and 'caminho A' in err
+
+
+def test_emissao_usa_a_serie_nova(sefin, capsys):
+    run(capsys, 'configurar', '--empresa', 'empresa-a', *FISCAL)
+    run(capsys, 'configurar', '--empresa', 'empresa-a', '--serie', '100')
+    responder_emissao(sefin)
+    code, data, _ = run(capsys, 'emitir', '--empresa', 'empresa-a', *TOMADOR, '--confirm')
+    assert code == 0
+    assert data['numero_dps'] == '1'
+    assert data['serie_dps'].lstrip('0') == '100'
+
+
 def test_empresas_mostra_o_caminho_de_cada_uma(conectada, capsys):
     conectada.save_credentials('empresa-b', '11444777000161', 'senha-portal')
     _, data, _ = run(capsys, 'empresas')

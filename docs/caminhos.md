@@ -15,8 +15,8 @@ certificado ICP-Brasil, por conexão mTLS, e devolve o XML da NFS-e autorizada. 
   implementação do leiaute e das regras de validação, numeração própria e geração do PDF.
 
 O `nfseai` implementa este caminho para emitentes fora do Simples Nacional, com ou sem retenção do ISSQN pelo
-tomador (`nfseai conectar --certificado`). Ele foi validado na produção restrita (homologação) e ainda não tem
-nota emitida na produção: o desenho, o que foi validado e o que está em aberto estão em [caminho-a.md](caminho-a.md). Para um volume alto
+tomador (`nfseai conectar --certificado`). Ele foi validado na produção restrita (homologação) e já emitiu
+notas na produção: o desenho, o que foi validado e o que está em aberto estão em [caminho-a.md](caminho-a.md). Para um volume alto
 de notas ou para uma operação que precisa do XML de cada nota, ele é o destino recomendado.
 
 ## B. Portal do contribuinte por HTTP (o que o `nfseai` faz)
